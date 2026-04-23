@@ -47,7 +47,7 @@ nubotv/
 1. Clone the repository:
 
 ```
-git clone https://github.com/your-username/nubotv-theme.git
+git clone https://github.com/DevAizenx/nubotv.git
 ```
 
 2. Open the project folder:

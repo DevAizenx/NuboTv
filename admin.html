@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NuboTv Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--bg2:#111118;--bg3:#18181f;--border:rgba(255,255,255,.09);--red:#e50914;--red2:#ff1a24;--text:#f0f0f5;--muted:#8888a0;--green:#46d369;--gold:#f5c518;--blue:#3b82f6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh}
+input,select,textarea{font-family:'Outfit',sans-serif}
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+#loginScreen.hide{display:none}
+.login-box{width:100%;max-width:380px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:36px 28px}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--red);letter-spacing:3px;text-align:center;margin-bottom:4px}
+.login-sub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:28px}
+.f-label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;display:block}
+.f-inp{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:#fff;font-size:14px;outline:none;transition:border-color .2s;margin-bottom:14px}
+.f-inp:focus{border-color:var(--red)}
+.btn-p{background:var(--red);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;transition:background .2s}
+.btn-p:hover{background:var(--red2)}
+.btn-p:disabled{opacity:.6;cursor:not-allowed}
+.btn-p.full{width:100%;padding:13px}
+.btn-c{background:rgba(255,255,255,.08);color:#fff;border:1px solid var(--border);border-radius:10px;padding:11px 20px;font-weight:600;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif}
+.btn-c:hover{background:rgba(255,255,255,.14)}
+.login-err{background:rgba(229,9,20,.12);border:1px solid rgba(229,9,20,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:14px;display:none}
+.login-err.show{display:block}
+/* LAYOUT */
+#app{display:none}
+#app.show{display:flex;min-height:100vh}
+#sidebar{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:100;overflow-y:auto}
+@media(max-width:700px){#sidebar{width:100%;height:56px;flex-direction:row;bottom:auto;border-right:none;border-bottom:1px solid var(--border);overflow:hidden}}
+.sb-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--red);letter-spacing:2px;padding:20px 18px 6px}
+.sb-sub{font-size:10px;color:var(--muted);padding:0 18px 14px;letter-spacing:.5px;text-transform:uppercase}
+@media(max-width:700px){.sb-logo,.sb-sub{display:none}}
+.sb-nav{display:flex;flex-direction:column;gap:2px;padding:0 10px;flex:1}
+@media(max-width:700px){.sb-nav{flex-direction:row;padding:0 8px;align-items:center;overflow-x:auto;scrollbar-width:none;height:56px}}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;transition:all .2s;border:none;background:none;font-family:'Outfit',sans-serif;white-space:nowrap}
+.sb-item:hover{color:#fff;background:rgba(255,255,255,.06)}
+.sb-item.on{color:#fff;background:rgba(229,9,20,.14);font-weight:600}
+.sb-item span:first-child{font-size:16px;flex-shrink:0}
+.sb-footer{padding:16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+@media(max-width:700px){.sb-footer{display:none}}
+#main{margin-left:220px;flex:1;padding:28px 24px;max-width:960px}
+@media(max-width:700px){#main{margin-left:0;margin-top:56px;padding:16px}}
+/* PANELS */
+.panel{display:none}.panel.on{display:block}
+.panel-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;margin-bottom:4px}
+.panel-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:30px;color:#fff;line-height:1}
+.stat-label{font-size:11px;color:var(--muted);margin-top:4px}
+.stat-icon{font-size:20px;margin-bottom:8px}
+/* TRAFFIC CHART */
+.traffic-bar-wrap{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:12px}
+.traffic-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.traffic-bar{background:var(--red);border-radius:4px 4px 0 0;min-height:4px;transition:height .4s;width:100%}
+.traffic-bar-label{font-size:9px;color:var(--muted);text-align:center;white-space:nowrap}
+.traffic-bar-val{font-size:9px;font-weight:700;color:#fff;text-align:center}
+/* SERVER CARDS */
+.srv-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.srv-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px}
+.srv-card.disabled{opacity:.5}
+.srv-order{width:26px;height:26px;background:rgba(255,255,255,.06);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);flex-shrink:0}
+.srv-em{font-size:24px;flex-shrink:0}
+.srv-info{flex:1;min-width:0}
+.srv-card-name{font-size:14px;font-weight:700}
+.srv-card-url{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.srv-card-qual{font-size:10px;font-weight:700;color:var(--green);margin-top:3px}
+.srv-actions{display:flex;gap:6px;flex-shrink:0}
+.icon-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.icon-btn:hover{background:rgba(255,255,255,.12)}
+.icon-btn.del:hover{background:rgba(229,9,20,.15);border-color:rgba(229,9,20,.3);color:var(--red)}
+.icon-btn.tog{font-size:10px;width:auto;padding:0 8px;font-weight:700}
+.badge-on{background:rgba(70,211,105,.12);color:var(--green);border-color:rgba(70,211,105,.25)}
+.badge-off{background:rgba(255,255,255,.05);color:var(--muted)}
+/* FORM */
+.form-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px}
+.form-title{font-size:14px;font-weight:700;margin-bottom:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:540px){.form-grid{grid-template-columns:1fr}}
+.form-full{grid-column:1/-1}
+.id-type-row{display:flex;gap:8px;margin-top:6px}
+.id-type-btn{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;text-align:center}
+.id-type-btn.on{border-color:var(--red);background:rgba(229,9,20,.12);color:#fff}
+.form-hint{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5}
+.form-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+/* ALERT */
+.alert{border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.alert.show{display:block}
+.alert-success{background:rgba(70,211,105,.1);border:1px solid rgba(70,211,105,.25);color:var(--green)}
+.alert-error{background:rgba(229,9,20,.1);border:1px solid rgba(229,9,20,.25);color:var(--red)}
+/* USERS TABLE */
+.tbl-wrap{overflow-x:auto;margin-bottom:16px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:500px}
+.tbl th{text-align:left;padding:9px 12px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.tbl td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.sub-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+.sub-free{background:rgba(70,211,105,.1);color:var(--green);border:1px solid rgba(70,211,105,.2)}
+.sub-premium{background:rgba(245,197,24,.1);color:var(--gold);border:1px solid rgba(245,197,24,.2)}
+/* SQL */
+.sql-box{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:10px}
+.sql-box pre{font-size:11px;color:var(--muted);overflow-x:auto;white-space:pre-wrap;word-break:break-word;line-height:1.7;font-family:monospace}
+.sql-box code{color:#7dd3fc}
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:#fff;color:#000;padding:10px 20px;border-radius:12px;font-weight:700;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.4);opacity:0;pointer-events:none;z-index:9999;transition:opacity .3s,transform .3s;transform:translateY(10px)}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.err{background:var(--red);color:#fff}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">NuboTv</div>
+    <div class="login-sub">Admin Panel</div>
+    <div class="login-err" id="loginErr">Incorrect password.</div>
+    <label class="f-label">Password</label>
+    <input type="password" class="f-inp" id="passInput" placeholder="Admin password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-p full" onclick="doLogin()">Sign In →</button>
+  </div>
+</div>
+
+<div id="app">
+  <div id="sidebar">
+    <div class="sb-logo">NuboTv</div>
+    <div class="sb-sub">Admin Panel</div>
+    <nav class="sb-nav">
+      <button class="sb-item on" onclick="showPanel('dashboard',this)"><span>📊</span><span>Dashboard</span></button>
+      <button class="sb-item" onclick="showPanel('servers',this)"><span>📡</span><span>Embed Servers</span></button>
+      <button class="sb-item" onclick="showPanel('traffic',this)"><span>📈</span><span>Traffic</span></button>
+      <button class="sb-item" onclick="showPanel('users',this)"><span>👥</span><span>Users</span></button>
+      <button class="sb-item" onclick="showPanel('seo',this)"><span>⚙️</span><span>Site Settings</span></button>
+      <button class="sb-item" onclick="showPanel('sql',this)"><span>🗄️</span><span>DB Setup</span></button>
+      <button class="sb-item" onclick="showPanel('settings',this)"><span>🔐</span><span>Security</span></button>
+    </nav>
+    <div class="sb-footer">
+      <div style="font-weight:600;color:var(--text);margin-bottom:4px">NuboTv Admin</div>
+      <button onclick="doLogout()" style="background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 12px;cursor:pointer;font-size:12px;font-family:'Outfit',sans-serif">Sign out</button>
+    </div>
+  </div>
+
+  <div id="main">
+
+    <!-- DASHBOARD -->
+    <div class="panel on" id="panel-dashboard">
+      <div class="panel-title">Dashboard</div>
+      <div class="panel-sub">Overview of NuboTv</div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-icon">📡</div><div class="stat-val" id="statSrv">—</div><div class="stat-label">Active Servers</div></div>
+        <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-val" id="statToday">—</div><div class="stat-label">Today's Visitors</div></div>
+        <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-val" id="statWeek">—</div><div class="stat-label">This Week</div></div>
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-val" id="statUsers">—</div><div class="stat-label">Total Users</div></div>
+        <div class="stat-card"><div class="stat-icon">😍</div><div class="stat-val" id="statRxn">—</div><div class="stat-label">Reactions</div></div>
+      </div>
+      <div class="form-box">
+        <div class="form-title">🚀 Quick Actions</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn-p" onclick="showPanel('servers',document.querySelectorAll('.sb-item')[1])">Manage Servers</button>
+          <button class="btn-p" onclick="showPanel('seo',document.querySelectorAll('.sb-item')[4])" style="background:rgba(59,130,246,.8)">Site Settings</button>
+          <button class="btn-c" onclick="window.open('index.html','_blank')">View Site ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMBED SERVERS -->
+    <div class="panel" id="panel-servers">
+      <div class="panel-title">Embed Servers</div>
+      <div class="panel-sub">Manage streaming servers with separate movie and TV routes.</div>
+      <div class="alert alert-success" id="srvAlert"></div>
+      <div class="alert alert-error" id="srvErr"></div>
+      <div class="form-box">
+        <div class="form-title">➕ Add New Server</div>
+        <div class="form-grid">
+          <div><label class="f-label">Server Name</label><input class="f-inp" id="newName" placeholder="e.g. VidSrc"></div>
+          <div><label class="f-label">Emoji</label><input class="f-inp" id="newEmoji" placeholder="🌐" maxlength="4"></div>
+          <div><label class="f-label">Quality</label><input class="f-inp" id="newQuality" placeholder="HD, FHD, 4K..."></div>
+          <div><label class="f-label">Sort Order</label><input class="f-inp" id="newOrder" type="number" placeholder="1" min="1"></div>
+          <div class="form-full"><label class="f-label">Movie Embed URL</label><input class="f-inp" id="newUrl" placeholder="https://embed.example.com/movie/"><div class="form-hint">The movie ID is appended: <code style="color:#7dd3fc">{url}{id}</code></div></div>
+          <div class="form-full"><label class="f-label">TV Show Embed URL <span style="color:var(--muted);font-weight:400;font-size:10px">(leave blank to use movie URL)</span></label><input class="f-inp" id="newTvUrl" placeholder="https://embed.example.com/tv/"><div class="form-hint">TV episodes: <code style="color:#7dd3fc">{url}{id}/{season}/{episode}</code></div></div>
+          <div class="form-full">
+            <label class="f-label">ID Type</label>
+            <div class="id-type-row">
+              <button class="id-type-btn on" id="newIdImdb" onclick="setIdType('new','imdb')">📌 IMDb ID<br><span style="font-size:10px;font-weight:400;color:var(--muted)">tt1234567</span></button>
+              <button class="id-type-btn" id="newIdTmdb" onclick="setIdType('new','tmdb')">🎬 TMDB ID<br><span style="font-size:10px;font-weight:400;color:var(--muted)">550</span></button>
+            </div>
+            <input type="hidden" id="newIdType" value="imdb">
+          </div>
+        </div>
+        <div class="form-actions"><button class="btn-p" onclick="addServer()">Save Server</button><button class="btn-c" onclick="clearForm()">Clear</button></div>
+      </div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">📡 Active Servers</div>
+      <div class="srv-list" id="srvList"><div style="text-align:center;padding:30px;color:var(--muted);font-size:13px">Loading...</div></div>
+      <div class="form-box" id="editBox" style="display:none;border-color:rgba(59,130,246,.3)">
+        <div class="form-title">✏️ Edit Server</div>
+        <input type="hidden" id="editId">
+        <div class="form-grid">
+          <div><label class="f-label">Name</label><input class="f-inp" id="editName"></div>
+          <div><label class="f-label">Emoji</label><input class="f-inp" id="editEmoji" maxlength="4"></div>
+          <div><label class="f-label">Quality</label><input class="f-inp" id="editQuality"></div>
+          <div><label class="f-label">Sort Order</label><input class="f-inp" id="editOrder" type="number"></div>
+          <div class="form-full"><label class="f-label">Movie Embed URL</label><input class="f-inp" id="editUrl"></div>
+          <div class="form-full"><label class="f-label">TV Show Embed URL</label><input class="f-inp" id="editTvUrl"></div>
+          <div class="form-full">
+            <label class="f-label">ID Type</label>
+            <div class="id-type-row">
+              <button class="id-type-btn" id="editIdImdb" onclick="setIdType('edit','imdb')">📌 IMDb ID</button>
+              <button class="id-type-btn" id="editIdTmdb" onclick="setIdType('edit','tmdb')">🎬 TMDB ID</button>
+            </div>
+            <input type="hidden" id="editIdType" value="imdb">
+          </div>
+        </div>
+        <div class="form-actions"><button class="btn-p" onclick="saveEdit()">Update</button><button class="btn-c" onclick="cancelEdit()">Cancel</button></div>
+      </div>
+    </div>
+
+    <!-- TRAFFIC -->
+    <div class="panel" id="panel-traffic">
+      <div class="panel-title">Traffic Analytics</div>
+      <div class="panel-sub">Unique visitors per day (1 IP counted once per 24 hours).</div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-val" id="trafficToday">—</div><div class="stat-label">Today</div></div>
+        <div class="stat-card"><div class="stat-icon">📆</div><div class="stat-val" id="trafficWeek">—</div><div class="stat-label">Last 7 Days</div></div>
+        <div class="stat-card"><div class="stat-icon">🗓️</div><div class="stat-val" id="trafficMonth">—</div><div class="stat-label">Last 30 Days</div></div>
+        <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-val" id="trafficBest">—</div><div class="stat-label">Best Day</div></div>
+      </div>
+      <div class="form-box">
+        <div class="form-title" style="margin-bottom:8px">Last 7 Days</div>
+        <div class="traffic-bar-wrap" id="trafficChart"></div>
+      </div>
+      <div class="form-box">
+        <div class="form-title" style="margin-bottom:8px">Daily Breakdown</div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Date</th><th>Unique Visitors</th></tr></thead>
+            <tbody id="trafficTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="panel" id="panel-users">
+      <div class="panel-title">Users</div>
+      <div class="panel-sub">Registered users from Supabase Auth. View details and manage subscriptions.</div>
+      <div class="alert alert-success" id="usersAlert"></div>
+      <div class="alert alert-error" id="usersErr"></div>
+      <!-- Email sync hint — shown when emails are missing -->
+      <div id="emailSyncHint" style="display:none;background:rgba(245,197,24,.08);border:1px solid rgba(245,197,24,.25);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--gold);margin-bottom:14px;line-height:1.6">
+        ⚠️ <strong>Some users are missing email.</strong> Emails are saved automatically when users sign up with the new code. For existing users, run this SQL in Supabase to backfill from auth:<br>
+        <code style="display:block;margin-top:8px;background:rgba(0,0,0,.3);padding:8px;border-radius:6px;font-size:11px;color:#7dd3fc;word-break:break-all">UPDATE user_meta um SET email = au.email, display_name = COALESCE(au.raw_user_meta_data->>'full_name', split_part(au.email,'@',1)) FROM auth.users au WHERE um.user_id = au.id AND (um.email IS NULL OR um.email = '');</code>
+      </div>
+      <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn-p" onclick="loadUsers()">🔄 Refresh</button>
+        <span id="userCount" style="font-size:13px;color:var(--muted)"></span>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Subscription</th><th>Actions</th></tr></thead>
+          <tbody id="usersTable"><tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Loading users...</td></tr></tbody>
+        </table>
+      </div>
+      <!-- Edit user subscription -->
+      <div class="form-box" id="editUserBox" style="display:none;border-color:rgba(59,130,246,.3)">
+        <div class="form-title">✏️ Edit User</div>
+        <input type="hidden" id="editUserId">
+        <div style="margin-bottom:12px">
+          <div id="editUserName" style="font-size:15px;font-weight:700;margin-bottom:4px"></div>
+          <div id="editUserEmail" style="font-size:12px;color:var(--muted)"></div>
+        </div>
+        <label class="f-label">Subscription Plan</label>
+        <select class="f-inp" id="editUserSub" style="cursor:pointer">
+          <option value="free">Free</option>
+          <option value="premium">⭐ Premium</option>
+        </select>
+        <div class="form-actions">
+          <button class="btn-p" onclick="saveUserSub()">💾 Save</button>
+          <button class="btn-c" onclick="cancelEditUser()">Cancel</button>
+          <button class="icon-btn del" onclick="deleteUser()" title="Delete user" style="margin-left:auto;width:auto;padding:0 14px;font-size:12px;font-weight:700">🗑 Delete User</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SITE SETTINGS / SEO -->
+    <div class="panel" id="panel-seo">
+      <div class="panel-title">Site Settings & SEO</div>
+      <div class="panel-sub">Configure site name, description, favicon, SEO metadata and profile images.</div>
+      <div class="alert alert-success" id="seoAlert"></div>
+      <div class="alert alert-error" id="seoErr"></div>
+      <div class="form-box">
+        <div class="form-title">🌐 General</div>
+        <label class="f-label">Site Name</label>
+        <input class="f-inp" id="siteName" placeholder="NuboTv">
+        <label class="f-label">Site Description</label>
+        <input class="f-inp" id="siteDesc" placeholder="Stream free movies and TV shows online in HD.">
+        <label class="f-label">Favicon URL</label>
+        <input class="f-inp" id="siteFavicon" placeholder="https://yourdomain.com/favicon.ico">
+        <div class="form-hint" style="margin-bottom:14px">Host a favicon on any image service and paste the direct URL here.</div>
+        <label class="f-label">Site Keywords</label>
+        <input class="f-inp" id="siteKeywords" placeholder="movies, tv shows, stream, anime, free">
+        <label class="f-label">OG Image URL <span style="font-weight:400;color:var(--muted)">(social media share image)</span></label>
+        <input class="f-inp" id="siteOgImage" placeholder="https://yourdomain.com/og-image.jpg">
+      </div>
+      <div class="form-box">
+        <div class="form-title">🖼️ Profile Images</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">Add profile image URLs — one per line. When a new user signs up, one will be randomly assigned to their profile.</div>
+        <label class="f-label">Image URLs (one per line)</label>
+        <textarea class="f-inp" id="siteProfileImages" rows="6" placeholder="https://example.com/avatar1.jpg&#10;https://example.com/avatar2.jpg&#10;https://example.com/avatar3.jpg" style="resize:vertical;line-height:1.6"></textarea>
+        <div class="form-hint">Tip: Use square images for best results. You can use any image hosting service.</div>
+        <div style="margin-top:12px">
+          <button class="btn-c" onclick="assignAvatarsToExistingUsers()" style="font-size:12px">🎲 Assign Avatars to Existing Users Without One</button>
+        </div>
+      </div>
+      <div style="margin-top:4px"><button class="btn-p" onclick="saveSiteSettings()">Save All Settings</button></div>
+    </div>
+
+    <!-- DB SETUP -->
+    <div class="panel" id="panel-sql">
+      <div class="panel-title">Database Setup</div>
+      <div class="panel-sub">Run these in Supabase → SQL Editor. Run each block separately.</div>
+      <div class="form-box">
+        <div class="form-title">📋 1 — embed_servers table (if not done yet)</div>
+        <div class="sql-box"><pre><code>CREATE TABLE IF NOT EXISTS embed_servers (
+  id          bigint generated by default as identity primary key,
+  name        text not null,
+  emoji       text default '🌐',
+  embed_url   text not null,
+  tv_url      text default '',
+  id_type     text default 'imdb',
+  quality     text default 'HD',
+  sort_order  int default 1,
+  enabled     boolean default true,
+  created_at  timestamptz default now()
+);
+ALTER TABLE embed_servers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public read" ON embed_servers FOR SELECT USING (enabled = true);
+CREATE POLICY "anon write" ON embed_servers FOR ALL USING (true) WITH CHECK (true);</code></pre></div>
+      </div>
+      <div class="form-box">
+        <div class="form-title">📋 2 — Add new columns (if table already existed)</div>
+        <div class="sql-box"><pre><code>ALTER TABLE embed_servers ADD COLUMN IF NOT EXISTS tv_url text default '';
+ALTER TABLE embed_servers ADD COLUMN IF NOT EXISTS id_type text default 'imdb';</code></pre></div>
+      </div>
+      <div class="form-box">
+        <div class="form-title">📋 3 — traffic table (NEW — for analytics)</div>
+        <div class="sql-box"><pre><code>CREATE TABLE IF NOT EXISTS traffic (
+  id      bigint generated by default as identity primary key,
+  date    date not null unique,
+  visitors jsonb default '[]',
+  count   int default 0
+);
+ALTER TABLE traffic ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public read traffic" ON traffic FOR SELECT USING (true);
+CREATE POLICY "anon write traffic" ON traffic FOR ALL USING (true) WITH CHECK (true);</code></pre></div>
+      </div>
+      <div class="form-box">
+        <div class="form-title">📋 4 — site_settings table (NEW — for SEO/favicon)</div>
+        <div class="sql-box"><pre><code>CREATE TABLE IF NOT EXISTS site_settings (
+  id    bigint generated by default as identity primary key,
+  key   text not null unique,
+  value text
+);
+ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public read settings" ON site_settings FOR SELECT USING (true);
+CREATE POLICY "anon write settings" ON site_settings FOR ALL USING (true) WITH CHECK (true);</code></pre></div>
+      </div>
+      <div class="form-box">
+        <div class="form-title">📋 5 — user_meta table (for subscription + avatar tracking)</div>
+        <div class="sql-box"><pre><code>CREATE TABLE IF NOT EXISTS user_meta (
+  id           bigint generated by default as identity primary key,
+  user_id      uuid not null unique,
+  email        text default '',
+  display_name text default '',
+  subscription text default 'free',
+  avatar_url   text default '',
+  created_at   timestamptz default now()
+);
+ALTER TABLE user_meta ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "users read own" ON user_meta FOR SELECT USING (true);
+CREATE POLICY "anon all" ON user_meta FOR ALL USING (true) WITH CHECK (true);
+
+-- If table already exists, add missing columns:
+ALTER TABLE user_meta ADD COLUMN IF NOT EXISTS avatar_url text default '';
+ALTER TABLE user_meta ADD COLUMN IF NOT EXISTS email text default '';
+ALTER TABLE user_meta ADD COLUMN IF NOT EXISTS display_name text default '';</code></pre></div>
+      </div>
+      <div class="form-box" style="border-color:rgba(245,197,24,.3)">
+        <div class="form-title">📋 6 — Backfill emails for existing users</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">Run this once to copy emails and names from Supabase Auth into user_meta for all existing users.</div>
+        <div class="sql-box"><pre><code>UPDATE user_meta um
+SET
+  email = au.email,
+  display_name = COALESCE(
+    au.raw_user_meta_data->>'full_name',
+    split_part(au.email, '@', 1)
+  )
+FROM auth.users au
+WHERE um.user_id = au.id
+  AND (um.email IS NULL OR um.email = '');</code></pre></div>
+      </div>
+    </div>
+
+    <!-- SECURITY -->
+    <div class="panel" id="panel-settings">
+      <div class="panel-title">Security</div>
+      <div class="panel-sub">Change admin password</div>
+      <div class="form-box">
+        <div class="form-title">🔐 Change Admin Password</div>
+        <div class="alert alert-success" id="pwAlert"></div>
+        <label class="f-label">Current Password</label><input class="f-inp" type="password" id="curPw" placeholder="Current password">
+        <label class="f-label">New Password</label><input class="f-inp" type="password" id="newPw" placeholder="New password (min 6 chars)">
+        <label class="f-label">Confirm</label><input class="f-inp" type="password" id="confPw" placeholder="Confirm new password" style="margin-bottom:16px">
+        <button class="btn-p" onclick="changePassword()">Update Password</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+var SRV_URL  = SB_URL+'/rest/v1/embed_servers';
+var RXN_URL  = SB_URL+'/rest/v1/reactions';
+var SITE_URL = SB_URL+'/rest/v1/site_settings';
+var TRAFFIC_URL = SB_URL+'/rest/v1/traffic';
+var UMETA_URL = SB_URL+'/rest/v1/user_meta';
+var AUTH_URL = SB_URL+'/auth/v1';
+var DEFAULT_PW = 'nuboadmin2025';
+var serverMap={};
+
+function getStoredPw(){return localStorage.getItem('nubo_admin_pw')||DEFAULT_PW;}
+function sbH(extra){return Object.assign({'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},extra||{});}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── AUTH ──────────────────────────────────────────────────────
+function doLogin(){var v=document.getElementById('passInput').value;if(v===getStoredPw()){document.getElementById('loginScreen').classList.add('hide');document.getElementById('app').classList.add('show');initAdmin();}else{document.getElementById('loginErr').classList.add('show');document.getElementById('passInput').value='';}}
+function doLogout(){document.getElementById('loginScreen').classList.remove('hide');document.getElementById('app').classList.remove('show');}
+function changePassword(){
+  var cur=document.getElementById('curPw').value,nw=document.getElementById('newPw').value,conf=document.getElementById('confPw').value,al=document.getElementById('pwAlert');
+  al.className='alert';
+  if(cur!==getStoredPw()){al.textContent='❌ Current password incorrect.';al.className='alert alert-error show';return;}
+  if(!nw||nw.length<6){al.textContent='❌ Min 6 characters.';al.className='alert alert-error show';return;}
+  if(nw!==conf){al.textContent='❌ Passwords do not match.';al.className='alert alert-error show';return;}
+  localStorage.setItem('nubo_admin_pw',nw);
+  al.textContent='✅ Password updated!';al.className='alert alert-success show';
+  document.getElementById('curPw').value='';document.getElementById('newPw').value='';document.getElementById('confPw').value='';
+}
+document.getElementById('passInput').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+// ── NAV ───────────────────────────────────────────────────────
+function showPanel(name,btn){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on');});
+  document.querySelectorAll('.sb-item').forEach(function(b){b.classList.remove('on');});
+  document.getElementById('panel-'+name).classList.add('on');
+  if(btn)btn.classList.add('on');
+  if(name==='traffic')loadTraffic();
+  if(name==='users')loadUsers();
+  if(name==='seo')loadSiteSettings();
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+function initAdmin(){
+  loadDashboard();
+  loadServerList();
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────
+function loadDashboard(){
+  fetch(SRV_URL+'?enabled=eq.true&select=id',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){document.getElementById('statSrv').textContent=Array.isArray(rows)?rows.length:'—';}).catch(function(){});
+  fetch(RXN_URL+'?select=sad,normal,happy,superhappy',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){if(!Array.isArray(rows))return;var total=rows.reduce(function(s,r){return s+(r.sad||0)+(r.normal||0)+(r.happy||0)+(r.superhappy||0);},0);document.getElementById('statRxn').textContent=total>=1000?(total/1000).toFixed(1)+'k':total;}).catch(function(){});
+  // Today traffic
+  var today=new Date().toISOString().split('T')[0];
+  fetch(TRAFFIC_URL+'?date=eq.'+today+'&select=count',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){document.getElementById('statToday').textContent=(rows&&rows[0])?rows[0].count:0;}).catch(function(){});
+  // 7-day traffic
+  var sevenAgo=new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+  fetch(TRAFFIC_URL+'?date=gte.'+sevenAgo+'&select=count',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){var total=Array.isArray(rows)?rows.reduce(function(s,r){return s+(r.count||0);},0):0;document.getElementById('statWeek').textContent=total;}).catch(function(){});
+  // Users count
+  loadUserCount();
+}
+
+function loadUserCount(){
+  // Use anon key to count via user_meta or just show from traffic
+  fetch(UMETA_URL+'?select=id',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){document.getElementById('statUsers').textContent=Array.isArray(rows)?rows.length:'—';}).catch(function(){document.getElementById('statUsers').textContent='—';});
+}
+
+// ── TRAFFIC ──────────────────────────────────────────────────
+function loadTraffic(){
+  var today=new Date();
+  var days=[];for(var i=29;i>=0;i--){var d=new Date(today-i*86400000);days.push(d.toISOString().split('T')[0]);}
+  var oldest=days[0];
+  fetch(TRAFFIC_URL+'?date=gte.'+oldest+'&order=date.desc',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){
+    if(!Array.isArray(rows))rows=[];
+    var map={};rows.forEach(function(r){map[r.date]=r.count||0;});
+    var todayKey=days[days.length-1];
+    document.getElementById('trafficToday').textContent=map[todayKey]||0;
+    var weekTotal=0;for(var i=days.length-7;i<days.length;i++)weekTotal+=(map[days[i]]||0);
+    document.getElementById('trafficWeek').textContent=weekTotal;
+    var monthTotal=days.reduce(function(s,d){return s+(map[d]||0);},0);
+    document.getElementById('trafficMonth').textContent=monthTotal;
+    var best=0,bestDay='—';days.forEach(function(d){if((map[d]||0)>best){best=map[d]||0;bestDay=d;}});
+    document.getElementById('trafficBest').textContent=best+' ('+bestDay+')';
+    // Chart — last 7 days
+    var last7=days.slice(-7);var max=Math.max.apply(null,last7.map(function(d){return map[d]||0;}))||1;
+    document.getElementById('trafficChart').innerHTML=last7.map(function(d){
+      var v=map[d]||0,pct=Math.round((v/max)*100);
+      var label=d.substring(5); // MM-DD
+      return '<div class="traffic-bar-col"><div class="traffic-bar-val">'+v+'</div><div class="traffic-bar" style="height:'+Math.max(pct,4)+'%"></div><div class="traffic-bar-label">'+label+'</div></div>';
+    }).join('');
+    // Table
+    var tableRows=days.slice().reverse().map(function(d){return '<tr><td>'+d+'</td><td><strong>'+(map[d]||0)+'</strong></td></tr>';}).join('');
+    document.getElementById('trafficTable').innerHTML=tableRows||'<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px">No data yet</td></tr>';
+  }).catch(function(){document.getElementById('trafficChart').innerHTML='<div style="color:var(--muted);font-size:13px">Failed to load. Create traffic table first (see DB Setup).</div>';});
+}
+
+// ── USERS ────────────────────────────────────────────────────
+var usersData=[];
+function loadUsers(){
+  document.getElementById('usersTable').innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Loading...</td></tr>';
+  fetch(UMETA_URL+'?select=user_id,subscription,avatar_url,created_at,email,display_name&order=created_at.desc',{headers:sbH()})
+    .then(function(r){return r.json();})
+    .then(function(rows){
+      if(!Array.isArray(rows)||!rows.length){
+        document.getElementById('usersTable').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No registered users yet.</td></tr>';
+        document.getElementById('userCount').textContent='';
+        return;
+      }
+      usersData=rows;
+      document.getElementById('userCount').textContent=rows.length+' user'+(rows.length!==1?'s':'');
+      renderUsersTable(rows);
+      // Check if any users are missing email — show sync hint
+      var missing=rows.filter(function(u){return !u.email;});
+      if(missing.length){
+        var hint=document.getElementById('emailSyncHint');
+        if(hint)hint.style.display='block';
+      }
+    }).catch(function(){
+      document.getElementById('usersTable').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Create the user_meta table first (see DB Setup tab)</td></tr>';
+    });
+}
+
+function renderUsersTable(rows){
+  document.getElementById('usersTable').innerHTML=rows.map(function(u){
+    var subClass=u.subscription==='premium'?'sub-premium':'sub-free';
+    var subLabel=u.subscription==='premium'?'⭐ Premium':'Free';
+    var joinDate=u.created_at?u.created_at.substring(0,10):'—';
+    var displayName=u.display_name||(u.email?u.email.split('@')[0]:('User …'+u.user_id.substring(0,6)));
+    var emailText=u.email||'—';
+    var avatarHtml=u.avatar_url
+      ?'<img src="'+esc(u.avatar_url)+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:7px;flex-shrink:0">'
+      :'<span style="display:inline-flex;width:30px;height:30px;border-radius:50%;background:#1a1a2e;align-items:center;justify-content:center;font-size:14px;margin-right:7px;flex-shrink:0;vertical-align:middle">👤</span>';
+    return '<tr>'
+      +'<td style="white-space:nowrap"><div style="display:flex;align-items:center">'+avatarHtml+'<div><div style="font-size:13px;font-weight:600;color:#fff">'+esc(displayName)+'</div><div style="font-size:10px;color:var(--muted)">'+esc(u.user_id.substring(0,8))+'…</div></div></div></td>'
+      +'<td style="font-size:12px;color:var(--muted)">'+esc(emailText)+'</td>'
+      +'<td style="color:var(--muted);font-size:12px">'+joinDate+'</td>'
+      +'<td><span class="sub-badge '+subClass+'">'+subLabel+'</span></td>'
+      +'<td><button class="icon-btn" onclick="editUserSub(\''+u.user_id+'\',\''+esc(u.subscription||'free')+'\',\''+esc(displayName)+'\',\''+esc(emailText)+'\')">✏️</button></td>'
+      +'</tr>';
+  }).join('');
+}
+
+function editUserSub(userId,currentSub,displayName,email){
+  document.getElementById('editUserId').value=userId;
+  document.getElementById('editUserName').textContent=displayName||('User '+userId.substring(0,8)+'…');
+  document.getElementById('editUserEmail').textContent=email&&email!=='—'?('📧 '+email):'No email on record';
+  document.getElementById('editUserSub').value=currentSub;
+  document.getElementById('editUserBox').style.display='block';
+  document.getElementById('editUserBox').scrollIntoView({behavior:'smooth'});
+}
+function saveUserSub(){
+  var uid=document.getElementById('editUserId').value;
+  var sub=document.getElementById('editUserSub').value;
+  fetch(UMETA_URL+'?user_id=eq.'+encodeURIComponent(uid),{method:'PATCH',headers:sbH({'Prefer':'return=representation'}),body:JSON.stringify({subscription:sub})})
+    .then(function(r){return r.json();})
+    .then(function(rows){
+      if(Array.isArray(rows)&&rows.length){
+        showAlert('usersAlert','success',sub==='premium'?'⭐ User upgraded to Premium!':'User set to Free plan.');
+        cancelEditUser();loadUsers();loadUserCount();
+      } else {
+        // Row doesn't exist — insert it
+        return fetch(UMETA_URL,{method:'POST',headers:sbH({'Prefer':'return=minimal'}),body:JSON.stringify({user_id:uid,subscription:sub})})
+          .then(function(r2){
+            if(r2.ok||r2.status===201){showAlert('usersAlert','success','Subscription updated ✅');cancelEditUser();loadUsers();loadUserCount();}
+            else{showAlert('usersErr','error','Failed to update. Check DB permissions.');}
+          });
+      }
+    })
+    .catch(function(){showAlert('usersErr','error','Network error.');});
+}
+function cancelEditUser(){document.getElementById('editUserBox').style.display='none';}
+function deleteUser(){
+  var uid=document.getElementById('editUserId').value;
+  var name=document.getElementById('editUserName').textContent||'this user';
+  if(!confirm('⚠️ Delete '+name+'?\n\nThis removes them from user_meta. Their Supabase Auth account remains — delete that manually in Supabase if needed.'))return;
+  fetch(UMETA_URL+'?user_id=eq.'+encodeURIComponent(uid),{method:'DELETE',headers:sbH()})
+    .then(function(r){
+      if(r.ok){
+        showAlert('usersAlert','success','User deleted from user_meta ✅');
+        cancelEditUser();
+        loadUsers();
+        loadUserCount();
+      } else {
+        r.text().then(function(t){showAlert('usersErr','error','Delete failed: '+t);});
+      }
+    }).catch(function(){showAlert('usersErr','error','Network error.');});
+}
+
+// ── SITE SETTINGS ────────────────────────────────────────────
+var siteSettingsMap={};
+function loadSiteSettings(){
+  fetch(SITE_URL+'?select=key,value',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){
+    if(!Array.isArray(rows))return;
+    rows.forEach(function(r){siteSettingsMap[r.key]=r.value;});
+    document.getElementById('siteName').value=siteSettingsMap['site_name']||'';
+    document.getElementById('siteDesc').value=siteSettingsMap['site_description']||'';
+    document.getElementById('siteFavicon').value=siteSettingsMap['favicon']||'';
+    document.getElementById('siteKeywords').value=siteSettingsMap['keywords']||'';
+    document.getElementById('siteOgImage').value=siteSettingsMap['og_image']||'';
+    document.getElementById('siteProfileImages').value=siteSettingsMap['profile_images']||'';
+  }).catch(function(){});
+}
+function saveSiteSettings(){
+  var settings={
+    site_name:document.getElementById('siteName').value.trim(),
+    site_description:document.getElementById('siteDesc').value.trim(),
+    favicon:document.getElementById('siteFavicon').value.trim(),
+    keywords:document.getElementById('siteKeywords').value.trim(),
+    og_image:document.getElementById('siteOgImage').value.trim(),
+    profile_images:document.getElementById('siteProfileImages').value.trim()
+  };
+  var keys=Object.keys(settings);
+  // For each key: try PATCH (update) first; if 0 rows affected, POST (insert)
+  var promises=keys.map(function(k){
+    return fetch(SITE_URL+'?key=eq.'+encodeURIComponent(k),{
+      method:'PATCH',
+      headers:sbH({'Prefer':'return=representation','Content-Type':'application/json'}),
+      body:JSON.stringify({value:settings[k]})
+    }).then(function(r){return r.json();}).then(function(rows){
+      // If PATCH returned empty array, the row doesn't exist yet — INSERT it
+      if(!Array.isArray(rows)||!rows.length){
+        return fetch(SITE_URL,{
+          method:'POST',
+          headers:sbH({'Prefer':'return=minimal','Content-Type':'application/json'}),
+          body:JSON.stringify({key:k,value:settings[k]})
+        }).then(function(r2){if(!r2.ok)return r2.text().then(function(t){throw new Error(k+': '+t);});});
+      }
+    });
+  });
+  Promise.all(promises)
+    .then(function(){
+      showAlert('seoAlert','success','Settings saved successfully! ✅');
+      siteSettingsMap={};
+      keys.forEach(function(k){siteSettingsMap[k]=settings[k];});
+    })
+    .catch(function(err){
+      showAlert('seoErr','error','Save failed: '+(err.message||'Check DB Setup tab and run site_settings SQL.'));
+    });
+}
+
+// Assign avatars to users who don't have one yet
+function assignAvatarsToExistingUsers(){
+  var profileImages=document.getElementById('siteProfileImages').value.trim();
+  var imgs=profileImages.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  if(!imgs.length){toast('Add image URLs first, then save settings.');return;}
+  fetch(UMETA_URL+'?select=user_id,avatar_url',{headers:sbH()})
+    .then(function(r){return r.json();})
+    .then(function(rows){
+      if(!Array.isArray(rows)||!rows.length){toast('No users found.');return;}
+      var noAvatar=rows.filter(function(u){return !u.avatar_url;});
+      if(!noAvatar.length){toast('All users already have avatars! ✅');return;}
+      var promises=noAvatar.map(function(u){
+        var img=imgs[Math.floor(Math.random()*imgs.length)];
+        return fetch(UMETA_URL+'?user_id=eq.'+encodeURIComponent(u.user_id),{method:'PATCH',headers:sbH({'Prefer':'return=minimal'}),body:JSON.stringify({avatar_url:img})});
+      });
+      Promise.all(promises).then(function(){
+        toast('Assigned avatars to '+noAvatar.length+' user'+(noAvatar.length>1?'s':'')+' ✅');
+        loadUsers();
+      });
+    }).catch(function(){toast('Error assigning avatars.');});
+}
+
+// ── SERVER MANAGEMENT ────────────────────────────────────────
+function loadServerList(){
+  var list=document.getElementById('srvList');
+  list.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px">Loading...</div>';
+  fetch(SRV_URL+'?order=sort_order.asc',{headers:sbH()}).then(function(r){return r.json();}).then(function(rows){
+    if(!Array.isArray(rows)||!rows.length){list.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px">No servers yet.</div>';return;}
+    serverMap={};rows.forEach(function(s){serverMap[s.id]=s;});
+    list.innerHTML=rows.map(function(s){
+      var tvLabel=s.tv_url?'TV: '+s.tv_url:'TV: uses movie URL';
+      var idLabel=s.id_type==='tmdb'?'🎬 TMDB':'📌 IMDb';
+      return '<div class="srv-card'+(s.enabled?'':' disabled')+'">'
+        +'<div class="srv-order">'+s.sort_order+'</div>'
+        +'<div class="srv-em">'+(s.emoji||'🌐')+'</div>'
+        +'<div class="srv-info"><div class="srv-card-name">'+esc(s.name)+'</div><div class="srv-card-url">Movie: '+esc(s.embed_url)+'</div><div class="srv-card-url" style="margin-top:2px">'+esc(tvLabel)+'</div>'
+        +'<div class="srv-card-qual">'+(s.quality||'HD')+' · '+idLabel+' · '+(s.enabled?'<span style="color:var(--green)">● Active</span>':'<span style="color:var(--muted)">● Off</span>')+'</div></div>'
+        +'<div class="srv-actions">'
+        +'<button class="icon-btn" onclick="editServer('+s.id+')" title="Edit">✏️</button>'
+        +'<button class="icon-btn tog '+(s.enabled?'badge-on':'badge-off')+'" onclick="toggleServer('+s.id+','+s.enabled+')">'+(s.enabled?'ON':'OFF')+'</button>'
+        +'<button class="icon-btn del" onclick="deleteServer('+s.id+')" title="Delete">🗑</button>'
+        +'</div></div>';
+    }).join('');
+  }).catch(function(){list.innerHTML='<div style="text-align:center;padding:30px;color:var(--red);font-size:13px">Failed. Check DB Setup.</div>';});
+}
+function setIdType(prefix,type){document.getElementById(prefix+'IdImdb').classList.toggle('on',type==='imdb');document.getElementById(prefix+'IdTmdb').classList.toggle('on',type==='tmdb');document.getElementById(prefix+'IdType').value=type;}
+function addServer(){
+  var name=document.getElementById('newName').value.trim(),url=document.getElementById('newUrl').value.trim();
+  var tvUrl=document.getElementById('newTvUrl').value.trim(),emoji=document.getElementById('newEmoji').value.trim()||'🌐';
+  var qual=document.getElementById('newQuality').value.trim()||'HD',order=parseInt(document.getElementById('newOrder').value)||1;
+  var idType=document.getElementById('newIdType').value||'imdb';
+  if(!name){showAlert('srvErr','error','Server name is required.');return;}
+  if(!url){showAlert('srvErr','error','Movie Embed URL is required.');return;}
+  if(!url.endsWith('/'))url+='/';if(tvUrl&&!tvUrl.endsWith('/'))tvUrl+='/';
+  fetch(SRV_URL,{method:'POST',headers:sbH({'Prefer':'return=minimal'}),body:JSON.stringify({name:name,embed_url:url,tv_url:tvUrl,id_type:idType,emoji:emoji,quality:qual,sort_order:order,enabled:true})})
+    .then(function(r){if(r.ok||r.status===201){showAlert('srvAlert','success','Server "'+name+'" added!');clearForm();loadServerList();loadDashboard();}else{return r.text().then(function(t){showAlert('srvErr','error','Error: '+t);});}})
+    .catch(function(){showAlert('srvErr','error','Network error. See DB Setup.');});
+}
+function editServer(srvId){
+  var s=serverMap[srvId];if(!s){showAlert('srvErr','error','Server not found.');return;}
+  document.getElementById('editId').value=s.id;document.getElementById('editName').value=s.name;document.getElementById('editEmoji').value=s.emoji||'🌐';
+  document.getElementById('editQuality').value=s.quality||'HD';document.getElementById('editOrder').value=s.sort_order||1;
+  document.getElementById('editUrl').value=s.embed_url;document.getElementById('editTvUrl').value=s.tv_url||'';
+  setIdType('edit',s.id_type||'imdb');
+  document.getElementById('editBox').style.display='block';document.getElementById('editBox').scrollIntoView({behavior:'smooth'});
+}
+function saveEdit(){
+  var id=document.getElementById('editId').value,name=document.getElementById('editName').value.trim();
+  var emoji=document.getElementById('editEmoji').value.trim()||'🌐',qual=document.getElementById('editQuality').value.trim()||'HD';
+  var order=parseInt(document.getElementById('editOrder').value)||1,url=document.getElementById('editUrl').value.trim();
+  var tvUrl=document.getElementById('editTvUrl').value.trim(),idType=document.getElementById('editIdType').value||'imdb';
+  if(!name||!url){showAlert('srvErr','error','Name and URL required.');return;}
+  if(!url.endsWith('/'))url+='/';if(tvUrl&&!tvUrl.endsWith('/'))tvUrl+='/';
+  fetch(SRV_URL+'?id=eq.'+id,{method:'PATCH',headers:sbH({'Prefer':'return=minimal'}),body:JSON.stringify({name:name,embed_url:url,tv_url:tvUrl,id_type:idType,emoji:emoji,quality:qual,sort_order:order})})
+    .then(function(r){if(r.ok){showAlert('srvAlert','success','Server updated!');cancelEdit();loadServerList();}else{return r.text().then(function(t){showAlert('srvErr','error','Error: '+t);});}})
+    .catch(function(){showAlert('srvErr','error','Network error.');});
+}
+function cancelEdit(){document.getElementById('editBox').style.display='none';}
+function toggleServer(id,current){
+  fetch(SRV_URL+'?id=eq.'+id,{method:'PATCH',headers:sbH({'Prefer':'return=minimal'}),body:JSON.stringify({enabled:!current})})
+    .then(function(r){if(r.ok){loadServerList();loadDashboard();toast(!current?'Server enabled':'Server disabled');}else{showAlert('srvErr','error','Failed to toggle.');}})
+    .catch(function(){showAlert('srvErr','error','Network error.');});
+}
+function deleteServer(id){
+  if(!confirm('Delete this server?'))return;
+  fetch(SRV_URL+'?id=eq.'+id,{method:'DELETE',headers:sbH()}).then(function(r){if(r.ok){loadServerList();loadDashboard();showAlert('srvAlert','success','Deleted.');}else{showAlert('srvErr','error','Failed.');}}).catch(function(){showAlert('srvErr','error','Network error.');});
+}
+function clearForm(){['newName','newUrl','newTvUrl','newEmoji','newQuality','newOrder'].forEach(function(id){document.getElementById(id).value='';});setIdType('new','imdb');}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function showAlert(id,type,msg){
+  var el=document.getElementById(id);
+  el.textContent=(type==='success'?'✅ ':'❌ ')+msg;
+  el.className='alert alert-'+(type==='success'?'success':'error')+' show';
+  setTimeout(function(){el.classList.remove('show');},4000);
+  // Hide opposite
+  var opp=id.replace('Alert','Err').replace('Err','Alert');
+  var oel=document.getElementById(opp);if(oel)oel.classList.remove('show');
+}
+function toast(msg,isErr){var t=document.getElementById('toast');t.textContent=msg;t.className='show'+(isErr?' err':'');clearTimeout(window._tt);window._tt=setTimeout(function(){t.classList.remove('show');},2500);}
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-# 🎬 Nubotv - Streaming UI Theme
+nubotv-themeemetv - Streaming UI Theme
 
 A modern and responsive **streaming platform UI theme** inspired by popular OTT platforms like Netflix and Prime Video.
 
@@ -53,7 +53,7 @@ git clone https://github.com/DevAizenx/nubotv.git
 2. Open the project folder:
 
 ```
-cd nubotv-theme
+cd nubotv
 ```
 
 3. Run in browser:

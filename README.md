@@ -1,4 +1,4 @@
-nubotv-themeemetv - Streaming UI Theme
+# 🎬 Nubotv - Streaming UI Theme
 
 A modern and responsive **streaming platform UI theme** inspired by popular OTT platforms like Netflix and Prime Video.
 
